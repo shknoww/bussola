@@ -52,6 +52,9 @@
       if (!authenticated) {
         state.csrf = ''; state.queue = null; state.audit = []; state.selected = null; state.dirty = false;
         $('queue').replaceChildren(); $('audit-list').replaceChildren(); $('record-context').replaceChildren();
+        $('open-source').removeAttribute('href'); $('open-source').hidden = true;
+        $('record-id').textContent = ''; $('revision').textContent = ''; $('queue-count').textContent = '';
+        $('token').value = ''; fragmentToken = '';
         form.reset(); form.hidden = true; $('choose-hint').hidden = false;
       }
     }

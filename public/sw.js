@@ -1,5 +1,5 @@
 // Strict shell allowlist: never store API responses, admin, sources or tiles.
-const CACHE='bussola-shell-public-v5';
+const CACHE='bussola-shell-public-v6';
 const FILES=['/index.html','/app.js','/style.css','/lib/public-core.js','/i18n/public-pt-BR.js','/i18n/public-en-GB.js','/manifest.webmanifest','/icons/icon.svg','/icons/icon-192.png','/icons/icon-512.png','/icons/maskable-512.png','/vendor/leaflet.js','/vendor/leaflet.css','/vendor/fonts.css','/vendor/dm-sans-400.ttf','/vendor/dm-sans-500.ttf','/vendor/dm-sans-600.ttf','/vendor/dm-sans-700.ttf'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('bussola-shell-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));

@@ -50,7 +50,8 @@ try{
  await page.click('[data-position="right"]');await page.getByRole('heading',{name:'No places found.'}).waitFor();
  assert.ok(requests.some(u=>u.pathname==='/api/map'&&u.searchParams.get('position')==='right'));
  await page.click('[data-position="all"]');await page.locator('[data-open]').first().waitFor();
- await page.fill('#search','café');await page.waitForTimeout(400);assert.ok(requests.some(u=>u.searchParams.get('q')==='café'));
+ const searchResponse=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/establishments'&&new URL(r.url()).searchParams.get('q')==='café');
+ await page.fill('#search','café');await page.clock.runFor(300);await searchResponse;assert.ok(requests.some(u=>u.searchParams.get('q')==='café'));
  await page.selectOption('#category','cafe');await page.waitForTimeout(100);
  assert.ok(requests.some(u=>u.pathname==='/api/establishments'&&u.searchParams.get('category')==='cafe'&&u.searchParams.get('q')==='café'));
  await page.click('#search-area');await page.waitForTimeout(100);assert.ok(requests.some(u=>u.searchParams.has('bbox')));

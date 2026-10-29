@@ -11,7 +11,8 @@
 
 ## Executed checks
 
-- Syntax and Node suite: 29 passes, no failures; three opt-in checks run separately where applicable.
+- Syntax and Node suite: 31 passes, no failures; three opt-in checks run separately where applicable.
+- Adversarial review: two reproduced P2 issues fixed — private DOM attributes erased on sign-out/pagehide, and known expired assertions removed by a local-clock timer without waiting for the network. Chromium regression tests are included.
 - Native PostgreSQL migration and SQL assertions in a separate QA database; fixtures rolled back.
 - Native concurrent sessions: one idempotent contribution and one publication/audit; the competing review receives a conflict.
 - Real API/database: submission, idempotency, private access, approval, invalid sources, corrections, suspension, withdrawal and CSRF.
