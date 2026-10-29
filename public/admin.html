@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Bússola · Administração</title>
+  <script src="/admin.js"></script>
+  <link rel="stylesheet" href="/vendor/fonts.css">
+  <link rel="stylesheet" href="/admin.css">
+  <script defer src="/i18n/admin-pt-BR.js"></script>
+  <script defer src="/i18n/admin-en-GB.js"></script>
+</head>
+<body>
+  <a href="#main" class="skip" data-i18n="skip">Ir para o conteúdo</a>
+  <header class="header">
+    <a class="brand" href="/" aria-label="Bússola"><span class="brand-symbol" aria-hidden="true">↗</span><span>Bússola<small data-i18n="admin">Administração</small></span></a>
+    <div class="header-actions"><a href="/" data-i18n="publicMap">Mapa público</a><label class="language"><span data-i18n="language">Idioma</span><select id="language"><option value="pt-BR">Português (BR)</option><option value="en-GB">English (UK)</option></select></label><button id="logout" hidden data-i18n="logout">Sair</button></div>
+  </header>
+  <main id="main">
+    <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+    <section id="login-panel" class="login panel">
+      <span class="eyebrow" data-i18n="restricted">Acesso restrito</span><h1 data-i18n="loginTitle">Revisar com cuidado.</h1>
+      <p data-i18n="loginIntro">Use a chave de acesso do administrador. Sugestões nunca são publicadas automaticamente.</p>
+      <form id="login-form" autocomplete="off"><label for="token" data-i18n="accessKey">Chave de acesso</label><input id="token" type="password" autocomplete="off" spellcheck="false" required maxlength="512"><button class="primary" type="submit" data-i18n="login">Entrar</button></form>
+      <p class="hint" data-i18n="keyHint">A chave não é salva neste navegador. A sessão usa um cookie protegido. Não compartilhe links de acesso.</p>
+    </section>
+    <section id="workspace" hidden>
+      <div class="page-heading"><div><span class="eyebrow" data-i18n="pilot">Piloto técnico</span><h1 data-i18n="reviewTitle">Revisão e fontes</h1><p data-i18n="reviewIntro">Verifique a unidade, o endereço e a fonte antes de publicar.</p></div><button id="refresh" data-i18n="refresh">Atualizar</button></div>
+      <div class="tabs" role="group" data-i18n-aria="sections"><button data-tab="submissions" aria-pressed="true" data-i18n="submissions">Sugestões</button><button data-tab="corrections" aria-pressed="false" data-i18n="corrections">Correções</button><button data-tab="establishments" aria-pressed="false" data-i18n="establishments">Estabelecimentos</button><button data-tab="audit" aria-pressed="false" data-i18n="audit">Auditoria</button></div>
+      <div id="review-layout" class="review-layout">
+        <section class="panel queue-panel" aria-labelledby="queue-title"><div class="queue-heading"><h2 id="queue-title" data-i18n="submissions">Sugestões</h2><span id="queue-count" class="badge"></span></div><label for="status-filter" data-i18n="statusFilter">Filtrar por status</label><select id="status-filter"><option value="" data-i18n="allStatuses">Todos os status</option></select><p class="hint" data-i18n="oldestFirst">Mais antigos primeiro</p><div id="queue"></div></section>
+        <section id="editor-panel" class="panel editor-panel"><p id="choose-hint" class="empty" data-i18n="choose">Escolha um registro para revisar.</p>
+          <form id="decision-form" hidden>
+            <div class="editor-heading"><h2 data-i18n="reviewRecord">Revisar registro</h2><span id="revision" class="badge"></span></div>
+            <p id="record-id" class="identifier"></p><div id="record-context" class="context"></div>
+            <label for="action" data-i18n="decision">Decisão</label><select id="action" name="action"></select><p id="action-help" class="hint"></p>
+            <fieldset id="place-fields"><legend data-i18n="placeDetails">Estabelecimento e unidade</legend>
+              <div class="form-grid">
+                <label class="wide"><span data-i18n="name">Nome</span><input name="name" required maxlength="160"></label>
+                <label><span data-i18n="category">Categoria</span><select name="category"><option value="cafe" data-i18n="cafe">Café</option><option value="restaurant" data-i18n="restaurant">Restaurante</option><option value="bookshop" data-i18n="bookshop">Livraria</option><option value="bar" data-i18n="bar">Bar</option><option value="shop" data-i18n="shop">Loja</option><option value="other" data-i18n="other">Outro</option></select></label>
+                <label><span data-i18n="unit">Unidade</span><input name="unit" maxlength="120"></label>
+                <label><span data-i18n="city">Cidade</span><input name="city" required maxlength="120"></label>
+                <label><span data-i18n="state">Estado / região</span><input name="state" required maxlength="80"></label>
+                <label class="wide"><span data-i18n="address">Endereço comercial</span><input name="address" required maxlength="300"></label>
+                <label class="wide"><span data-i18n="neighbourhood">Bairro</span><input name="neighbourhood" maxlength="120"></label>
+                <label><span data-i18n="lat">Latitude</span><input name="lat" type="number" step="any" min="-90" max="90" required></label>
+                <label><span data-i18n="lng">Longitude</span><input name="lng" type="number" step="any" min="-180" max="180" required></label>
+              </div><p class="hint" data-i18n="coordinatesHint">Confirme as coordenadas da unidade física. Não use endereços residenciais.</p>
+              <h3 data-i18n="sourceHeading">Posição e fonte</h3><p class="hint" data-i18n="sourceRules">Não infira posição por clientes, bairro ou opinião pessoal. Direita, Esquerda e declarações sobre clientes exigem fonte direta, verificada e com abrangência confirmada.</p>
+              <div class="form-grid">
+                <label><span data-i18n="position">Posição</span><select name="position"><option value="unknown" data-i18n="unknown">Não mencionado</option><option value="left" data-i18n="left">Esquerda</option><option value="right" data-i18n="right">Direita</option></select></label>
+                <label><span data-i18n="sourceType">Tipo de fonte</span><select name="source_type"><option value="direct" data-i18n="direct">Direta</option><option value="third_party" data-i18n="third_party">Terceiro (não elegível)</option></select></label>
+                <label class="wide"><span data-i18n="sourceUrl">Fonte original (HTTPS)</span><input name="source_url" type="url" maxlength="2000" placeholder="https://"><a id="open-source" target="_blank" rel="noopener noreferrer" hidden data-i18n="openSource">Abrir fonte</a></label>
+                <label class="wide"><span data-i18n="sourceScope">Abrangência e vínculo com a unidade</span><textarea name="source_scope" rows="2" maxlength="500"></textarea></label>
+                <label><span data-i18n="sourceDate">Data da publicação (opcional)</span><input name="source_published_at" type="datetime-local"></label>
+                <label><span data-i18n="reviewDue">Revisar até</span><input name="review_due_at" type="datetime-local" required></label>
+                <p class="hint wide" data-i18n="dateHint">Horários locais. Prazo inicial: 180 dias a partir de hoje. Data desconhecida da fonte deve ficar em branco.</p>
+                <label class="wide"><span data-i18n="customerStatement">Declaração sobre clientes (opcional)</span><textarea name="customer_statement" rows="3" maxlength="1000"></textarea></label>
+                <label class="check wide"><input name="source_verified" type="checkbox"><span data-i18n="verified">Verifiquei a fonte direta, sua autoria e a abrangência desta unidade.</span></label>
+              </div>
+            </fieldset>
+            <label for="reason" data-i18n="reason">Justificativa da decisão (obrigatória)</label><textarea id="reason" name="reason" rows="3" required maxlength="2000"></textarea>
+            <p class="hint" data-i18n="reasonHint">Registre evidências e limites. Não inclua dados pessoais desnecessários. A justificativa fica na auditoria privada.</p>
+            <button type="submit" class="primary" data-i18n="saveDecision">Registrar decisão</button>
+          </form>
+        </section>
+      </div>
+      <section id="audit-panel" class="panel" hidden><h2 data-i18n="audit">Auditoria</h2><p class="hint" data-i18n="auditHint">Histórico privado de decisões. Os dados originais são preservados no idioma em que foram registrados.</p><div id="audit-list"></div></section>
+    </section>
+    <noscript><p>Ative JavaScript para usar a administração. / Enable JavaScript to use administration.</p></noscript>
+  </main>
+  <footer><span data-i18n="footer">Bússola · Revisão humana, fonte identificada.</span><span data-i18n="privateArea">Área privada · não compartilhe o conteúdo da fila.</span></footer>
+</body>
+</html>

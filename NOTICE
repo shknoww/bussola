@@ -1,0 +1,33 @@
+Bússola
+Copyright 2026 Marcos Mendes
+Original author / Autor original: Marcos Mendes
+
+Original software code is licensed under the Apache License, Version 2.0.
+The complete licence is included in LICENSE.
+https://www.apache.org/licenses/LICENSE-2.0
+
+Original project writing, documentation and visual design are licensed under
+Creative Commons Attribution 4.0 International (CC BY 4.0).
+https://creativecommons.org/licenses/by/4.0/
+https://creativecommons.org/licenses/by/4.0/legalcode
+Credit Marcos Mendes and Bússola, link to the licence, and indicate changes.
+No endorsement is implied. See README.md and README.en-GB.md for scope.
+
+Third-party materials retain their own copyright and licence terms:
+
+- Leaflet: BSD 2-Clause licence.
+  Preserve public/vendor/LEAFLET-LICENSE.txt.
+  https://leafletjs.com/
+- DM Sans: SIL Open Font License, Version 1.1.
+  Preserve public/vendor/DM-SANS-OFL.txt.
+  https://openfontlicense.org/
+- OpenStreetMap map data: © OpenStreetMap contributors, ODbL.
+  Preserve visible map attribution and observe the tile provider's policy.
+  https://www.openstreetmap.org/copyright
+  https://operations.osmfoundation.org/policies/tiles/
+- Playwright and other development dependencies retain their distributed
+  licences and notices. Consult each installed package's LICENSE/NOTICE.
+
+External source pages, business declarations, personal data and trademarks
+are not relicensed by this notice. This project does not claim ownership of
+third-party content or imply endorsement by businesses or map providers.

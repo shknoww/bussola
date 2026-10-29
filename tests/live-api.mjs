@@ -1,0 +1,56 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+const enabled=process.env.RUN_LIVE_QA==='isolated-qa';
+const origin=process.env.QA_ORIGIN||'http://localhost:4173';
+if(enabled && !['localhost','127.0.0.1'].includes(new URL(origin).hostname)) throw new Error('Live fixture tests require isolated loopback QA');
+test('isolated database: submission → publication → correction → suspension → archive', {skip:!enabled},async()=>{
+  let cookie='',csrf='';
+  async function call(path,{method='GET',body,auth=false}={}){
+    const headers={Origin:origin};
+    if(body) headers['Content-Type']='application/json';
+    if(auth){headers.Cookie=cookie;headers['X-CSRF-Token']=csrf;}
+    const res=await fetch(origin+path,{method,headers,body:body?JSON.stringify(body):undefined});
+    const value=await res.json();
+    return {status:res.status,value,cookie:res.headers.get('set-cookie')};
+  }
+  assert.equal((await call('/api/health')).value.database,true);
+  assert.equal((await call('/api/admin/queue')).status,401);
+  assert.equal((await call('/api/admin/login',{method:'POST',body:{token:'not-the-key'}})).status,401);
+  const token=execFileSync('/usr/bin/security',['find-generic-password','-s','mira/bussola/qa-admin-token','-w'],{encoding:'utf8'}).trim();
+  const login=await call('/api/admin/login',{method:'POST',body:{token}});
+  assert.equal(login.status,200);assert.ok(login.cookie.includes('HttpOnly'));assert.ok(login.cookie.includes('SameSite=Strict'));
+  cookie=login.cookie.split(';')[0];csrf=login.value.csrf;assert.ok(csrf);
+  const key=randomUUID();
+  const draft={idempotency_key:key,name:'Café QA '+key.slice(0,8),category:'cafe',city:'São Paulo',state:'SP',address:'Rua de Teste, 100',neighbourhood:'Centro',unit:'Unidade QA',position:'left',source_url:'https://example.org/declaracao',notes:'Fixture exclusivamente em banco de testes.',website:''};
+  const created=await call('/api/submissions',{method:'POST',body:draft});
+  assert.equal(created.status,201);assert.equal(created.value.status,'pending');const id=created.value.id;
+  const repeated=await call('/api/submissions',{method:'POST',body:draft});assert.ok([200,201].includes(repeated.status));assert.equal(repeated.value.id,id);
+  assert.equal((await call('/api/establishments/'+id)).status,404);
+  const queue=await call('/api/admin/queue',{auth:true});assert.equal(queue.status,200);
+  const row=queue.value.submissions.find(s=>s.id===id);assert.ok(row);
+  const place={...draft,lat:-23.55,lng:-46.63,source_type:'direct',source_scope:'Esta unidade',source_published_at:null,source_verified:true,review_due_at:new Date(Date.now()+86400000*180).toISOString(),customer_statement:null};
+  for (const field of ['idempotency_key','notes','website']) delete place[field];
+  const decide={kind:'submission',id,expected_revision:row.revision,action:'publish',reason:'End-to-end QA in isolated database',place};
+  const invalid=await call('/api/admin/decision',{method:'POST',auth:true,body:{...decide,place:{...place,source_type:'third_party'}}});assert.equal(invalid.status,400);
+  const published=await call('/api/admin/decision',{method:'POST',auth:true,body:decide});assert.equal(published.status,200);
+  const placeId=published.value.id;
+  assert.equal((await call('/api/admin/decision',{method:'POST',auth:true,body:decide})).status,409);
+  const detail=await call('/api/establishments/'+placeId);assert.equal(detail.status,200);assert.equal(detail.value.position,'left');assert.equal(detail.value.source_url,place.source_url);assert.equal(detail.value.source_published_at,null);
+  for(const hidden of ['notes','reviewed_by','actor','ip','idempotency_key']) assert.equal(hidden in detail.value,false);
+  const listed=await call('/api/establishments?q=cafe&position=left&category=cafe&city='+encodeURIComponent('São Paulo'));
+  assert.equal(listed.status,200);assert.ok(listed.value.items.some(p=>p.id===placeId));
+  assert.equal((await call('/api/establishments?position=right&q='+key.slice(0,8))).value.total,0);
+  const correction=await call('/api/establishments/'+placeId+'/corrections',{method:'POST',body:{idempotency_key:randomUUID(),reason:'outdated',notes:'Isolated test of correction workflow.',website:''}});assert.equal(correction.status,201);
+  assert.equal((await call('/api/establishments/'+placeId)).value.position,'left');
+  const suspend=await call('/api/admin/decision',{method:'POST',auth:true,body:{kind:'establishment',id:placeId,expected_revision:detail.value.revision,action:'suspend',reason:'Suspend test classification'}});assert.equal(suspend.status,200);
+  const suspended=await call('/api/establishments/'+placeId);assert.equal(suspended.value.position,'unknown');assert.equal(suspended.value.source_url,null);assert.equal(suspended.value.review_state,'suspended');
+  const archive=await call('/api/admin/decision',{method:'POST',auth:true,body:{kind:'establishment',id:placeId,expected_revision:suspended.value.revision,action:'archive',reason:'Retire isolated test fixture'}});assert.equal(archive.status,200);
+  assert.equal((await call('/api/establishments/'+placeId)).status,404);
+  assert.equal((await call('/api/establishments?ids='+placeId)).value.total,0);
+  assert.ok((await call('/api/admin/audit',{auth:true})).value.items.length>=3);
+  const noCsrf=await fetch(origin+'/api/admin/logout',{method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'application/json'},body:'{}'});assert.equal(noCsrf.status,403);
+  assert.equal((await call('/api/admin/logout',{method:'POST',auth:true,body:{}})).status,200);
+  console.log('Verified: real shared persistence, idempotency, no premature publication, source validation, conflict, filtered read, private projection, correction, suspension, archive, audit and CSRF.');
+});

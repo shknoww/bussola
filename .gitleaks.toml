@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public localStorage key, not an authentication credential"
+regexes = ['''^bussola-favourites-v1$''']
