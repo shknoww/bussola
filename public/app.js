@@ -42,7 +42,29 @@ function keepFocus(root,draw){
   draw();
   if(attribute&&!active.isConnected){const next=[...root.querySelectorAll('['+attribute+']')].find(el=>el.getAttribute(attribute)===value);(next||root.querySelector('[data-close]')||root).focus({preventScroll:true});}
 }
-function render(){keepFocus($('#results'),renderContent);}
+let expiryTimer;
+function revalidateVisible(){
+  const now=Date.now(), removed=new Set();let changed=false;
+  const check=(p,filtered=false)=>{
+    if(p.cluster)return p;
+    const clean=publicPlace(p,now);
+    if(clean.review_state!==p.review_state||clean.position!==p.position||clean.source_url!==p.source_url)changed=true;
+    if(filtered&&['left','right'].includes(state.position)&&clean.position!==state.position){removed.add(p.id);return null;}
+    return clean;
+  };
+  state.items=state.items.map(p=>check(p,true)).filter(Boolean);
+  state.points=state.points.map(p=>check(p,true)).filter(Boolean);
+  if(state.detail)state.detail=check(state.detail);
+  if(removed.size){state.total=Math.max(0,state.total-removed.size);state.next=null;state.points=state.points.filter(p=>!p.cluster);}
+  return changed;
+}
+function scheduleExpiry(){
+  clearTimeout(expiryTimer);
+  const now=Date.now();
+  const deadlines=[...state.items,...state.points,state.detail].filter(p=>p&&!p.cluster&&p.review_state==='current').map(p=>Date.parse(p.review_due_at)).filter(d=>Number.isFinite(d)&&d>now);
+  if(deadlines.length)expiryTimer=setTimeout(()=>{render();if($('#detail-dialog').open)renderDetail();refresh();},Math.min(2147483647,Math.max(1,Math.min(...deadlines)-now)));
+}
+function render(){revalidateVisible();keepFocus($('#results'),renderContent);scheduleExpiry();}
 function renderContent(){
   $('#saved-count').textContent=state.saved.length;
   $('#view-title').textContent=t(state.view==='saved'?'savedTitle':'nextPlace');
@@ -133,7 +155,7 @@ async function checkSaved(){
 }
 function date(value){return value&&Number.isFinite(Date.parse(value))?new Date(value).toLocaleDateString(lang):t('noDate');}
 let detailError=null, detailLoading=false;
-function renderDetail(){keepFocus($('#detail'),renderDetailContent);}
+function renderDetail(){if(revalidateVisible())render();keepFocus($('#detail'),renderDetailContent);scheduleExpiry();}
 function renderDetailContent(){
   const close=`<div class="dialog-header"><span class="dialog-kicker">Bússola</span><button class="icon-button" data-close data-aria="close" aria-label="${esc(t('close'))}">×</button></div>`;
   if(!navigator.onLine){$('#detail').innerHTML=close+`<h2 id="detail-title">${esc(t('offline'))}</h2><p>${esc(t('offlineHelp'))}</p>`;return;}
@@ -151,8 +173,8 @@ async function fetchDetail(){
   try{if(!UUID.test(id)) {const e=new Error('not_found');e.status=404;throw e;}const p=publicPlace(await api('/establishments/'+id,{signal:detailController.signal}));if(version!==detailVersion||id!==state.selected||!navigator.onLine)return;if(p.id!==id)throw new Error('invalid_response');state.detail=p;detailLoading=false;renderDetail();}
   catch(e){if(version!==detailVersion)return;state.detail=null;detailError=e.status||e.message;detailLoading=false;renderDetail();}
 }
-function openDetail(id,trigger){state.selected=id;state.detail=null;detailError=null;detailLoading=true;const url=new URL(location.href);url.searchParams.set('place',id);history.pushState({place:id},'',url);renderDetail();openDialog($('#detail-dialog'),trigger);renderMap();fetchDetail();}
-function clearDetailURL(){detailController?.abort();++detailVersion;state.selected=null;state.detail=null;const url=new URL(location.href);url.searchParams.delete('place');history.replaceState(null,'',url);renderMap();}
+function openDetail(id,trigger){state.selected=id;state.detail=null;detailError=null;detailLoading=true;const url=new URL(location.href);url.searchParams.set('place',id);history.pushState({place:id},'',url);renderDetail();openDialog($('#detail-dialog'),trigger);render();fetchDetail();}
+function clearDetailURL(){detailController?.abort();++detailVersion;state.selected=null;state.detail=null;const url=new URL(location.href);url.searchParams.delete('place');history.replaceState(null,'',url);render();}
 function routeFromURL(){const id=new URL(location.href).searchParams.get('place');if(id){state.selected=id;state.detail=null;detailLoading=true;renderDetail();openDialog($('#detail-dialog'));fetchDetail();}else if($('#detail-dialog').open)$('#detail-dialog').close();}
 function toggleSave(id){
   try{const stored=readFavourites(localStorage);const exists=stored.some(p=>p.id===id);const p=state.detail?.id===id?state.detail:state.items.find(x=>x.id===id)||state.points.find(x=>x.id===id);if(!exists&&!p)return;const next=exists?stored.filter(p=>p.id!==id):[...stored,p];state.saved=writeFavourites(localStorage,next);$('#storage-status').hidden=true;notify(t(exists?'removedOk':'savedOk'));render();if(state.detail)renderDetail();if(state.view==='saved'){loadResults({reset:true});checkSaved();}}
@@ -183,7 +205,7 @@ function connectivity(){
   if(!navigator.onLine){queryController?.abort();detailController?.abort();++queryVersion;++detailVersion;++savedVersion;state.items=[];state.points=[];state.detail=null;state.loading=false;unavailable=[];if(map&&tiles&&map.hasLayer(tiles))map.removeLayer(tiles);$('#map-status').textContent=t('offlineHelp');$('#map-status').hidden=false;render();if($('#detail-dialog').open)renderDetail();}
   else{mapFailure=false;if(map&&tiles&&!map.hasLayer(tiles))tiles.addTo(map);$('#map-status').hidden=!!map;loadResults();fetchDetail();loadCities();checkSaved();}
 }
-function refresh(){if(document.visibilityState!=='visible'||!navigator.onLine)return;loadResults();if(state.selected)fetchDetail();if(state.view==='saved')checkSaved();}
+function refresh(){render();if($('#detail-dialog').open)renderDetail();if(document.visibilityState!=='visible'||!navigator.onLine)return;loadResults();if(state.selected)fetchDetail();if(state.view==='saved')checkSaved();}
 
 // Explicit previous/next page navigation keeps every result reachable during refresh.
 const previous=document.createElement('button');previous.id='previous-page';previous.className='text-button';previous.hidden=true;previous.textContent='←';previous.dataset.aria='previousPage';previous.setAttribute('aria-label',t('previousPage'));$('#load-more').before(previous);
@@ -226,7 +248,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installProm
 $('#install-button').addEventListener('click',async e=>{if(installPrompt){try{await installPrompt.prompt();await installPrompt.userChoice;}catch{openDialog($('#install-dialog'),e.currentTarget);}installPrompt=null;}else openDialog($('#install-dialog'),e.currentTarget);});
 window.addEventListener('appinstalled',()=>{installPrompt=null;notify(t('installed'));});
 window.addEventListener('online',connectivity);window.addEventListener('offline',connectivity);window.addEventListener('popstate',routeFromURL);
-window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);
+window.addEventListener('focus',refresh);window.addEventListener('pageshow',refresh);document.addEventListener('visibilitychange',refresh);
 window.addEventListener('storage',e=>{if(e.key==='bussola-favourites-v1'||e.key===null){try{state.saved=readFavourites(localStorage);render();if(state.detail)renderDetail();if(state.view==='saved'){loadResults({reset:true});checkSaved();}}catch{storageFailure();}}});
 setInterval(refresh,REFRESH_MS);
 translate();initMap();loadResults();loadCities();routeFromURL();if(!navigator.onLine)connectivity();

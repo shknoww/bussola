@@ -11,7 +11,8 @@
 
 | Camada | Resultado executado |
 |---|---|
-| Sintaxe e testes | `npm run check`; suíte Node com 29 aprovações, sem falhas, 3 verificações opt-in separadas |
+| Sintaxe e testes | `npm run check`; suíte Node com 31 aprovações, sem falhas, 3 verificações opt-in separadas |
+| Revisão adversarial | Dois problemas P2 reproduzidos e corrigidos: limpeza de atributos privados no logout/pagehide e remoção de afirmações vencidas por relógio local, sem depender da rede; regressões Chromium incluídas |
 | PostgreSQL nativo | Migração aplicada em banco de QA separado; testes SQL passaram, com rollback dos exemplos |
 | Concorrência nativa | Duas sessões concorrentes: uma sugestão e uma publicação/auditoria; a outra decisão recebe conflito |
 | API integrada | Envio, repetição idempotente, privacidade, aprovação, fonte inválida, correção, suspensão, retirada e CSRF passaram contra o Supabase real de QA |

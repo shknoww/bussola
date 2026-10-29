@@ -65,7 +65,7 @@ Na implementação, verificações de sintaxe dos três arquivos JavaScript pass
 - Logout seguido de sessão `401` e limpeza da fila.
 - Login manual e falha de servidor com resultado incerto, sem apagar a justificativa.
 
-Essa evidência **não** equivale a execução do painel contra PostgreSQL real, deployment de produção, teste de carga, auditoria completa de acessibilidade ou teste de aparelhos físicos. O harness de implementação foi temporário; o roteiro acima especifica a regressão que deve ser mantida pela suíte do projeto.
+A evidência foi ampliada com PostgreSQL real, dois navegadores e produção nesta entrega; veja [RELEASE.md](RELEASE.md). O harness sintético citado acima não substitui essas verificações nem qualifica carga, acessibilidade completa ou aparelhos físicos.
 
 ## Gates separados antes de ampliar o piloto
 
