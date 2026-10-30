@@ -18,9 +18,10 @@ try{
  browser=await chromium.launch({headless:true});
  const context=await browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block'});
  let fail=false,hidden=false,suspended=false,pageMode=false,submissionFailure=true,mapClusters=false;
- const requests=[],posts=[],errors=[];
+ const requests=[],posts=[],errors=[],tileRequests=[];
  await context.route('**/*',async route=>{
   const url=new URL(route.request().url());
+  if(url.hostname==='tile.openstreetmap.org')tileRequests.push(route.request().headers());
   if(url.origin!==origin){await route.abort();return;}
   if(!url.pathname.startsWith('/api/')){await route.continue();return;}
   requests.push(url);
@@ -77,6 +78,7 @@ try{
  await page.setViewportSize({width:390,height:900});if(await page.locator('.sidebar').isVisible())await page.click('#mobile-toggle');await page.click('#mobile-toggle');assert.ok(await page.locator('.sidebar').isVisible());await page.click('#mobile-toggle');assert.ok(await page.locator('.map-section').isVisible());
  await page.setViewportSize({width:1440,height:1000});await page.goto(origin+'/?place='+id);await page.locator('#detail-title').filter({hasText:mock.name}).waitFor();assert.equal(await page.locator('#detail-dialog').evaluate(d=>d.open),true);
  await page.locator('#detail [data-close]').click();await page.click('#install-button');await page.getByText(/In Safari on iPhone/).waitFor();await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>document.activeElement.id),'install-button');
+ assert.ok(tileRequests.length>0,'map requested tiles');assert.ok(tileRequests.every(h=>h.referer===origin+'/'),'tiles identify only the app origin, never a place ID or filter');
  assert.deepEqual(errors,[]);
  const denied=await context.newPage();denied.on('pageerror',e=>errors.push(e.message));await denied.addInitScript(()=>Object.defineProperty(window,'localStorage',{get(){throw new Error('MOCK storage denied');}}));await denied.goto(origin);await denied.locator('#storage-status:not([hidden])').waitFor();await denied.locator('#results [data-save]').first().click();assert.equal(await denied.locator('#saved-count').textContent(),'0');assert.deepEqual(errors,[]);await denied.close();
  await context.close();

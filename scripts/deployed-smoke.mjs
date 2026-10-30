@@ -18,7 +18,12 @@ for(const [engine,launcher] of Object.entries({chromium,webkit})){
  const context=await browser.newContext({viewport:{width:1440,height:1000}});
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const csp=[];page.on('console',msg=>{if(msg.type()==='error'&&/Content Security Policy|Refused/.test(msg.text()))csp.push(msg.text());});
+ const tileRequests=[];page.on('request',r=>{if(new URL(r.url()).hostname==='tile.openstreetmap.org')tileRequests.push(r);});
  await page.goto(origin,{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>{const imgs=[...document.querySelectorAll('.leaflet-tile')];return imgs.length>0&&imgs.every(i=>i.complete&&i.naturalWidth>0);},{},{timeout:20000});
+ assert.ok(tileRequests.length>0,`${engine}: real map requests`);
+ for(const request of tileRequests)assert.equal((await request.allHeaders()).referer,origin+'/',`${engine}: map origin-only referrer`);
+ console.log(`${engine}: actual map tiles loaded with origin-only referrer`);
  await page.locator('#results-count').filter({hasText:/^\d+/}).waitFor({state:'attached'});
  await page.locator('#language').selectOption('en-GB');assert.equal(await page.locator('html').getAttribute('lang'),'en-GB');
  for(const width of [360,390,768,1440]){
