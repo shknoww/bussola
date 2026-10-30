@@ -19,7 +19,7 @@ A localização do visitante depende de ação/permissão no navegador; não dev
 
 ## Serviços externos
 
-O navegador se conecta ao provedor de mapas. Esse provedor pode receber IP e pedidos de imagens que indicam a área visualizada. Fontes e rotas abertas pelo visitante usam sites externos, sujeitos às próprias políticas. A aplicação usa política de referência `no-referrer`, mas não controla os registros desses destinos. Não envie a posição política selecionada a serviços de rota.
+O navegador se conecta ao provedor de mapas. Esse provedor pode receber IP e pedidos de imagens que indicam a área visualizada. Fontes e rotas abertas pelo visitante usam sites externos, sujeitos às próprias políticas. A aplicação usa política de referência `no-referrer`, com uma exceção nas imagens do mapa: envia somente a origem do site (`origin`), como exige o OpenStreetMap, nunca o caminho, filtros ou identificadores. Não controla os registros desses destinos. Não envie a posição política selecionada a serviços de rota.
 
 Hospedagem e banco também podem manter registros técnicos de infraestrutura; “sem analytics” não significa “nenhum log de rede”. A operação deve revisar configurações e contratos desses serviços. Não habilite captura de corpos de login, notas, coordenadas do visitante, cookies ou cabeçalhos de autenticação em logs, traces ou monitoramento.
 

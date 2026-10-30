@@ -117,7 +117,7 @@ function showMapFailure(){mapFailure=true;renderMapStatus();}
 function initMap(){try {
   if(!window.L)throw new Error('map');
   map=L.map('map',{zoomControl:false,minZoom:3,maxZoom:19,maxBounds:[[-85,-180],[85,180]],maxBoundsViscosity:1}).setView([-23.558,-46.679],13);
-  tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>'});
+  tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,referrerPolicy:'origin',attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>'});
   if(navigator.onLine) tiles.addTo(map);
   tiles.on('tileerror',()=>showMapFailure('mapTilesError'));
   tiles.on('load',renderMapStatus);
